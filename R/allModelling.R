@@ -68,12 +68,16 @@
 #' 
 
 
-allModeling <- function(data, varstack, k = 10, algorithm = c("glm", "svm", "maxent", "mars", "randomForest", "cart.rpart", "cart.tree"), destdir =getwd(), projection = CRS("+proj=longlat +init=epsg:4326")){
+allModeling <- function(data, varstack, k = 10, algorithm = c("glm", "svm", "maxent", "mars", "randomForest", "cart.rpart", "cart.tree"), 
+                        destdir =getwd(), projection = CRS("+proj=longlat +init=epsg:4326")){
+  algorithm <- match.arg(algorithm, choices = c("glm", "svm", "maxent", "mars", "randomForest", "cart.rpart", "cart.tree"))
   biostack <- varstack
-  algorithm <- as.character(algorithm) 
   if (class(data[[1]]) != "list"){
     data<-list(data)
-  }else{data<-data}
+    names(data) <- "species"
+  }else{
+    data <- data
+  }
   
   for (i in 1:length(data)){
     sp_01 <- data[[i]]
@@ -88,11 +92,22 @@ allModeling <- function(data, varstack, k = 10, algorithm = c("glm", "svm", "max
       mod <- tryCatch({modelo(kdata = xx, data=sp.bio, algorithm)},
                       error = function(err){xxx = list(rep(NA, k), NA, NA)})
       if (length(data)==1){
-       save(list=c("mod"), file=paste(destdir, "/", algorithm,"_bg", destfile, ".Rdata",sep=""))
+       save(list=c("mod"), file=paste(destdir, "/", algorithm,"_bg", destfile, ".rda",sep=""))
       }else{
-        save(list=c("mod"), file=paste(destdir, "/", algorithm,"_bg", destfile, "_hg",names(data)[i], ".Rdata",sep=""))
+        save(list=c("mod"), file=paste(destdir, "/", algorithm,"_bg", destfile, "_hg",names(data)[i], ".rda",sep=""))
       }
       rm(mod, xx, x, sp.bio)
     }}
-  return(list.files(destdir, full.names = F))
+  #collect information
+  extents <- list()
+  for(j in 1:length(data)){
+    extents[[j]] <- names(data[[j]])
+  }
+  names(extents) <- names(data)
+  dirs <- list.files(destdir, full.names = F, pattern = algorithm)
+  attr(dirs, "algorithm") <- algorithm
+  attr(dirs, "species") <- names(data)
+  attr(dirs, "extents") <- extents
+  
+  return(dirs)
 }

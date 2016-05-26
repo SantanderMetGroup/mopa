@@ -46,40 +46,38 @@
 
 
 
-loadTestValues <-function(data, test = c("auc", "kappa", "tss"), algorithm = c("glm","svm","maxent","mars","randomForest","cart.rpart","cart.tree"), sourcedir=getwd()){
+loadTestValues <-function(models, sourcedir = getwd(), test = c("auc", "kappa", "tss")){
+  test <- match.arg(test, choices = c("auc", "kappa", "tss"))
+  extents <-attr(models, "extents")
+  extent.lengths <- lengths(extents)
+  max.extents <- extents[[which(extent.lengths == max(extent.lengths))]]
+  algorithm <- attr(models, "algorithm")  
+  species <- attr(models, "species") 
   
-  if (class(data[[1]]) != "list"){
-    dat<-list(data)
-  }else{dat<-data}
+  val_mat <- matrix(NA, nrow= length(species), ncol=length(max.extents), dimnames=list(species, max.extents))
   
-  l<-numeric()
-  for( j in 1:length(dat)){
-    l[j]<-length(dat[[j]])
-  }
-  
-  cols<-max(l)
-  maxind<-which(l==max(l))[1]
-  extents<-names(dat[[maxind]])
-  val_mat<-matrix(NA, nrow=length(dat), ncol=cols, dimnames=list(names(dat),extents))
-  
-  for (i in 1:length(dat)){
-    g<-names(dat)[i]
-    bgs<-length(dat[[i]])
-    r<-names(dat[[i]])
-    print(paste("loading values for species", i))
-    for (k in 1:bgs){
-      b<-k
-      if (class(data[[1]]) != "list"){
-      load(paste(sourcedir,"/", algorithm, "_bg", r[k],".Rdata",sep=""))
+  for (i in 1:length(species)){
+    g <- species[i]
+    r <- extents[[i]]
+    print(paste("loading values for species", g))
+    for (k in 1:length(r)){
+      if (length(species) < 2){
+        load(paste(sourcedir,"/", algorithm, "_bg", r[k],".rda",sep=""))
       }else {
-        load(paste(sourcedir,"/", algorithm, "_bg", r[k],"_hg",g,".Rdata",sep=""))
+        load(paste(sourcedir,"/", algorithm, "_bg", r[k],"_hg",g,".rda",sep=""))
       }
-      
-      if (test == "auc"){val_mat[i,k]<-mod$auc
-      } else if (test == "kappa"){val_mat[i,k]<-mod$kappa
-      } else if (test == "tss"){val_mat[i,k]<-mod$tss}
+      if (test == "auc"){
+        val_mat[i,k]<-mod$auc
+      }else if (test == "kappa"){
+        val_mat[i,k]<-mod$kappa
+      }else if (test == "tss"){
+        val_mat[i,k]<-mod$tss
+      }
     } 
-    
   }
+  attr(val_mat, "algorithm") <- algorithm
+  attr(val_mat, "species") <- species
+  attr(val_mat, "extents") <- extents
+  attr(val_mat, "source directory") <- sourcedir
   return (val_mat)
 }

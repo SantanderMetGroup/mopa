@@ -7,7 +7,7 @@
 #' Matrix or list of matrixes of bounding coordinates indicating the maximum and minimum 
 #' values in columns and xy coordinates in rows
 #' @param grid Projected SpatialPoints object
-#' @param names Names or IDs to be given to each shape
+#' @param names Names or IDs to be given to each shape. Default bounding.coords names.
 #' 
 #' @return A list with two components: 
 #' \itemize{
@@ -60,10 +60,11 @@
 #' @import sp
 #' @importFrom splancs bboxx
 
-delimit<-function(bounding.coords, grid, names){
+delimit<-function(bounding.coords, grid, names = NULL){
   
   if (class(bounding.coords) != "list"){
     bounds<-list(bounding.coords)
+    names(bounds) <- "background"
   }else{bounds<-bounding.coords}
   
   bb0<-bounds
@@ -72,7 +73,11 @@ delimit<-function(bounding.coords, grid, names){
   bb2 <- lapply(bb1, function(x) rbind(x, x[1,]))
   bb2[[1]]
   
+  if(!is.null(names)){
   rn <- names
+  }else{
+    rn <- names(bounds)
+  }
 
   bb3 <- vector(mode="list", length=length(bb2))
 

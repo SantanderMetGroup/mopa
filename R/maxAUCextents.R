@@ -263,6 +263,10 @@ indextent <- function (testmat, diagrams = TRUE) {
     
     print(pl)
   }
-  
-  return(unlist(e))
+  e <- unlist(e)
+  attr(e, "algorithm") <- attr(testmat, "algorithm")
+  attr(e, "species") <- attr(testmat, "species")
+  attr(e, "extents") <- attr(testmat, "extents")
+  attr(e, "source directory") <- attr(testmat, "source directory")
+  return(e)
 } #end

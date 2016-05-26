@@ -55,7 +55,7 @@
 \section{Introduction}
 This is a tutorial containing a full worked example of species distribution modelling using the RSEP method and the three-step methods (TS and TSKM methods) for pseudo-absence generation presented in Iturbide et al., 2015, combining environmental profiling and spatial extent restriction of the background (see Fig. 2 in the cited article). We illustrate the steps followed to produce some of the analyses presented in the article using the R package \texttt{mopa} (MOdelling Pseudo Absences). \\
 
-
+\textbf{More detailed and updated examples can be found in the wiki of the \texttt{mopa} repository on gitHub:} https://github.com/SantanderMetGroup/mopa/wiki 
 
 NOTE: Most functions presented are implemented in \texttt{mopa}. In the few cases in which functions from other packages are used, the package name is always explicitly indicated.
 
@@ -111,24 +111,23 @@ plot(biostack)
 The regularly distributed grid points covering the continental area can be created with functions from the \texttt{raster} and \texttt{sp} packages as follows:
 
 <<mopa4>>=
-# Extract raster values at grid coordinates
 ac <- xyFromCell(biostack[[1]], 1:ncell(biostack[[1]]))
 ex <- extract(biostack[[1]], ac)
 # Convert to a Spatial object and define projection
-sp_grid <- SpatialPoints(ac[-which(is.na(ex)), ])
-projection(sp_grid) <- CRS("+proj=longlat +init=epsg:4326")
+sp_grid_world <- SpatialPoints(ac[-which(is.na(ex)), ])
+projection(sp_grid_world) <- CRS("+proj=longlat +init=epsg:4326")
 @
 
 For ease of use, the previous steps can be skipped, as the \texttt{sp\_grid} object is already included in the \texttt{mopa} package, covering the whole world at 10 km resolution.
 
 <<mopa4.1>>=
-data(sp_grid)
+data(sp_grid_world)
 @
 
 Function \texttt{boundingCoords} creates a matrix of bounding coordinates around the known presence localities of the target species. In this case, since the \texttt{Oak\_phylo2} list contains two groups of points (one for each haplotype considered), a list of two matrices is created.
 
 <<mopa5>>=
- oak.extension <- boundingCoords(xy = Oak_phylo2)
+oak.extension <- boundingCoords(xy = Oak_phylo2)
 @
 
 Function \texttt{delimit} creates a rectangular polygon shape from the bounding coordinates and does the intersection of the background points. A \texttt{list} with two objects is obtained: (1) \texttt{bbs}: polygon shape of the bounding boxes and (2) \texttt{bbs.grid}: a list of data frames of the background point grid limited by the bounding coordinates.
@@ -136,12 +135,11 @@ Function \texttt{delimit} creates a rectangular polygon shape from the bounding 
 
 <<mopa6, fig=TRUE, echo=TRUE>>=
 box.grid <- delimit(bounding.coords = oak.extension, 
-                    grid = sp_grid, 
-                    names = names(Oak_phylo2))
+                    grid = sp_grid_world)
 # Plot presences and bounding boxes
 plot(box.grid$bbs, asp = 1)
 for (i in 1:length(Oak_phylo2)){
-  points(Oak_phylo2[[i]], col = colors()[i*50])
+     points(Oak_phylo2[[i]], col = colors()[i*50])
 }
 @
 
@@ -158,7 +156,7 @@ The first step is the selection of the environmentally unsuitable areas using a 
 unsuitable.bg <-OCSVMprofiling(xy = Oak_phylo2, 
                                varstack = biostack, 
                                bbs.grid = box.grid$bbs.grid)
-# Plot areas predicted as suitable (presence) and unsuitable 
+# Plot areas predicted as suitable (presence) and unsuitable
 # (absence) for group H11
 plot(unsuitable.bg$absence$H11, pch = "*", asp = 1)
 points(unsuitable.bg$presence$H11, pch = "*", col = "pink2")

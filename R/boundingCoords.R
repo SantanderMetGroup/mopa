@@ -20,6 +20,7 @@
 
 boundingCoords<-function(xy){
   
+  if (class(xy) == "matrix") xy <- as.data.frame(xy)
   if (class(xy) == "data.frame"){
     pres.list<-list(xy)
   }else{pres.list<-xy}
@@ -39,7 +40,10 @@ boundingCoords<-function(xy){
   names(l.box)<-names(pres.list)
   
   if (class(xy)=="data.frame"){
-    box<-l.box[[1]]}else{box<-l.box}
+    box<-l.box[[1]]
+  }else{
+    box<-l.box
+  }
   
   return(box)
 }

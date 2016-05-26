@@ -58,14 +58,19 @@
 
 OCSVMprofiling<-function(xy, varstack, bbs.grid, nu=.5){
   
-  if (class(bbs.grid) != "list"){
-    coords<-list(bbs.grid)
-  }else{coords <-bbs.grid}
-  
   if (class(xy) != "list"){
     pres<- list(xy)
-  } else {pres <- xy}
+  } else {
+    pres <- xy
+  }
   
+  if (class(bbs.grid) != "list"){
+    coords<-rep(list(bbs.grid), length(xy))
+  }else{
+    coords <-bbs.grid
+  }
+  
+ 
   bioclim <-varstack
   absence<-list()    
   presence<-list()

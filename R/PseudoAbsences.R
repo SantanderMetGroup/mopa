@@ -71,16 +71,16 @@ PseudoAbsences<-function (xy, bg.grids, exclusion.buffer = 0.0166, prevalence = 
   polybuffs <- list()
   r <- exclusion.buffer
   prev <- (1 - prevalence) * 2
+  
   if (class(bg.grids[[1]]) == "matrix") {
     bg2 <- list(bg.grids)
-  }
-  else {
+  } else {
     bg2 <- bg.grids
   }
+  
   if (class(xy) == "data.frame") {
     pres.list <- list(xy)
-  }
-  else {
+  }  else {
     pres.list <- xy
   }
   for (j in 1:length(pres.list)) {
@@ -99,44 +99,61 @@ PseudoAbsences<-function (xy, bg.grids, exclusion.buffer = 0.0166, prevalence = 
       spolybuff <- Polygons(list(polys[[i]]), ID = i)
       spolys <- c(spolys, spolybuff)
       spol <- SpatialPolygons(spolys)
-      proj4string(spol) <- projection
+       proj4string(spol) <- projection
     }
     polybuffs[[j]] <- spol
   }
   aa <- list()
   for (j in 1:length(bg2)) {
-    print(paste("generating pseudo-absences for species", 
-                j, "out of", length(bg2)))
+    message("generating pseudo-absences for species ", 
+                j, " out of ", length(bg2))
     aus <- list()
     coords.l <- bg2[[j]]
     polpol <- polybuffs[[j]]
     pr <- pres.list[[j]]
     for (i in 1:length(coords.l)) {
+#       print(paste("b =", i, "out of", as.character(length(coords.l))))
       coords <- coords.l[[i]]
       sp.coords <- SpatialPoints(coords)
-      proj4string(sp.coords) <- projection
+       proj4string(sp.coords) <- projection
       a <- over(sp.coords, polpol)
       abs.bg <- coords[which(is.na(a)), 1:2]
       
       if (kmeans == TRUE) {
         abs.aus<-cbind(abs.bg, rep(0, nrow(abs.bg)))
         abs.bio<-biomat(data = abs.aus, varstack, projection)
-        aus[[i]] <- kmeans(cbind(abs.bg, abs.bio[,-1]), centers = prev * nrow(pr))$centers[,1:2]
+        aus[[i]] <- tryCatch({kmeans(cbind(abs.bg, abs.bio[,-1]), centers = prev * nrow(pr))$centers[,1:2]},
+                              error = function(err){aus[[i]] <- NULL})
         
       }
       else {
-        aus[[i]] <- abs.bg[sample(1:nrow(abs.bg), size = prev * 
-                                    nrow(pr)), ]
+       
+        aus[[i]] <- tryCatch({abs.bg[sample(1:nrow(abs.bg), size = prev * 
+                                    nrow(pr)), ]}, error = function(err){aus[[i]] <- NULL})
+ 
       }
     }
+    
     names(aus) <- names(coords.l)
-    aa[[j]] <- aus
+    ind <- rep(NA,length(aus))
+    for(n in 1:length(aus)){
+      if(is.null(aus[[n]])){
+        message("Background ", names(coords.l)[n], " is too small for sampling and will be ignored")
+        ind[n] <- n
+      }
+    }
+    as <- unname(na.omit(ind))
+    if(length(as)!=0){
+      aa[[j]] <- aus[-as]
+    }else{
+      aa[[j]] <- aus
+    }
   }
   if (length(aa) == 1) {
     aa <- aa[[1]]
-  }
-  else {
+  } else {
     names(aa) <- names(pres.list)
   }
   return(aa)
 }
+

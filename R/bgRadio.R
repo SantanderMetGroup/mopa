@@ -72,13 +72,15 @@ bgRadio<-function(xy, bounding.coords, bg.absence, start= 0.166, by= 0.083,
                   unit= "decimal degrees"){
   
   bg1a<-list()
-  
+  if(class(xy) == "matrix") xy <- as.data.frame(xy)
   if (class(xy) == "data.frame"){
     pres<- list(xy)
-  }else {pres<-xy}
+  }else{
+    pres<-xy
+  }
   
   if (class(bounding.coords) != "list"){
-    l.box<-list(bounding.coords)
+    l.box<-rep(list(bounding.coords),length(xy))
   }else{l.box<-bounding.coords}
   
   if (class(bg.absence) != "list"){

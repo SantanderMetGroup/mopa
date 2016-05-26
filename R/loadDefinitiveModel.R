@@ -51,21 +51,21 @@
 #' @export
 
 
-loadDefinitiveModel<-function(data, extents, slot=c("allmod", "auc", "kappa", "tss", "mod", "p"),
-                    algorithm = c("glm","svm","maxent","mars","randomForest","cart.rpart",
-                                  "cart.tree"), sourcedir = getwd()){
-  
-  if (class(data[[1]]) != "list"){
-    dat<-list(data)
-  }else{dat<-data}
-  
+loadDefinitiveModel<-function(def.extents, slot = c("allmod", "auc", "kappa", "tss", "mod", "p")){
+  slot <- match.arg(slot, choices = c("allmod", "auc", "kappa", "tss", "mod", "p"))
+  extents <-attr(def.extents, "extents")
+  extent.lengths <- lengths(extents)
+  max.extents <- extents[[which(extent.lengths == max(extent.lengths))]]
+  algorithm <- attr(def.extents, "algorithm")  
+  species <- attr(def.extents, "species") 
+  sourcedir <- attr(def.extents, "source directory")
   modelslot<-list()
-  for (i in 1:length(data)){
-    g<-names(data)[i]
-    if (class(data[[1]]) != "list"){
-    load(paste(sourcedir,"/", algorithm, "_bg", names(extents)[i],".Rdata",sep=""))
+  for (i in 1:length(species)){
+    g <- species[i]
+    if (length(species)<2){
+    load(paste(sourcedir,"/", algorithm, "_bg", names(def.extents)[i],".rda",sep=""))
     } else {
-    load(paste(sourcedir,"/", algorithm, "_bg", names(extents)[i],"_hg",g,".Rdata",sep=""))
+    load(paste(sourcedir,"/", algorithm, "_bg", names(def.extents)[i],"_hg",g,".rda",sep=""))
     }
       if (slot == "allmod"){modelslot[[i]]<-mod$allmod
       } else if (slot == "auc"){modelslot[[i]]<-mod$auc
@@ -74,6 +74,7 @@ loadDefinitiveModel<-function(data, extents, slot=c("allmod", "auc", "kappa", "t
       } else if (slot == "mod"){modelslot[[i]]<-mod$mod
       } else if (slot == "p"){modelslot[[i]]<-mod$p}
   } 
-  names(modelslot)<-names(data)
+  names(modelslot) <- species
+  if(species == "species"){modelslot <- modelslot[[1]]}
   return (modelslot)
 }
