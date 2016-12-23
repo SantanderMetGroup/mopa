@@ -29,7 +29,8 @@ CRS("+proj=longlat +init=epsg:4326")}
 Named Rdata objects are stored in the
 specified path. Each Object is given a name indicating the algorithm, background
 extent, and species in this order (if a single species is provided no name is given
-for the species). Character object with listed files is returned.
+for the species). The object returned by the function is a list of characters with listed files,
+used algorithm, species names and background extents.
 Each Rdata consists of a list with six components:
 
  \item{allmod }{fitted model using all data for training}
@@ -52,13 +53,13 @@ This function calculates the AUC with the function \code{\link[PresenceAbsence]{
 \examples{
 \dontrun{
 data(presaus)
-data(biostack)
-##modelling
-modirs <- allModeling(data = presaus, varstack = biostack, k = 10, algorithm = "mars")
+data(biostackENSEMBLES)
+##modeling
+modirs <- allModeling(data = presaus, varstack = biostackENSEMBLES$baseline, k = 10, "mars")
 }
 }
 \author{
-M. Iturbide \email{maibide@gmail.com}
+M. Iturbide
 }
 \references{
 Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015.

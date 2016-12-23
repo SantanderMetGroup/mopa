@@ -36,7 +36,7 @@ This function calculates the AUC with the function "auc" from package
 "PresenceAbsence". Package SDMTools must be detached.
 }
 \author{
-M. Iturbide \email{maibide@gmail.com}
+M. Iturbide
 }
 \keyword{internal}
 

@@ -1,13 +1,13 @@
 
-#' @title Delimit study area and background 
+#' @title Delimit study area and background coordinates
 #' @description Creation of polygon shapes from bounding coordinates and delimitation of 
 #' SpatialPoints data to the defined boundaries
 #' 
-#' @param bounding.coords Object returned by function \code{\link{boundingCoords}}. 
-#' Matrix or list of matrixes of bounding coordinates indicating the maximum and minimum 
-#' values in columns and xy coordinates in rows
+#' @param bounding.coords A vector or a list of vectors with bounding coordinates in the following form: c(x1, x2, y1, y2). 
+#' Also object returned by function \code{\link{boundingCoords}}. 
 #' @param grid Projected SpatialPoints object
-#' @param names Names or IDs to be given to each shape. Default bounding.coords names.
+#' @param names Character. Names or IDs to be given to each shape. If not specified names of the object passed to 
+#' bounding.coords will be given. In case this object has no names the background numbers will be used as names. 
 #' 
 #' @return A list with two components: 
 #' \itemize{
@@ -26,29 +26,35 @@
 #' 
 #' 
 #' 
-#' @author M. Iturbide \email{maibide@@gmail.com}
+#' @author M. Iturbide 
 #' 
 #' @examples
 #' \dontrun{
 #' data(Oak_phylo2)
-#' data(biostack)
+#' data(biostackENSEMBLES)
+#' presences <- Oak_phylo2
+#' 
 #' ##creation of point grid from raster object
-#' library(raster)
-#' ac<-xyFromCell(biostack[[1]],  1:ncell(biostack[[1]]))
-#' ex<-extract(biostack[[1]], ac)
-#' ##exclude sea and project
-#' sp_grid<-SpatialPoints(ac[-which(is.na(ex)),])
-#' projection(sp_grid)<-CRS("+proj=longlat +init=epsg:4326")
-#' plot(sp_grid)
-#' ##delimit study area
-#' oak.extension<-boundingCoords(Oak_phylo2)
-#' box.grid <- delimit(bounding.coords = oak.extension, grid = sp_grid, names = names(Oak_phylo2))
-#'
+#' sp_grid <- background(biostackENSEMBLES$baseline$bio2)
+#' 
+#' ##delimit study area to the whole study domain for both species
+#' bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
+#' del <- delimit(bounding.coords = bc, grid = sp_grid)
 #' ## Plot presences and bounding boxes
-#' plot(box.grid$bbs, asp = 1)
-#' for (i in 1:length(Oak_phylo2)){
-#'  points(Oak_phylo2[[i]], col = colors()[i*50])
-#'  }
+#' plot(del$bbs, asp = 1)
+#' for (i in 1:length(presences)){
+#'   points(presences[[i]], col = colors()[i*50])
+#' }
+#' 
+#' ##delimit study area to the bounding coordinates of each species
+#' bc <- boundingCoords(presences)
+#' del <- delimit(bounding.coords = bc, grid = sp_grid)
+#' 
+#' ## Plot presences and bounding boxes
+#' plot(del$bbs, asp = 1)
+#' for (i in 1:length(presences)){
+#'   points(presences[[i]], col = colors()[i*50])
+#'   }
 #'}
 #'
 #' @references Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015. 
@@ -61,28 +67,26 @@
 #' @importFrom splancs bboxx
 
 delimit<-function(bounding.coords, grid, names = NULL){
-  
-  if (class(bounding.coords) != "list"){
-    bounds<-list(bounding.coords)
-    names(bounds) <- "background"
-  }else{bounds<-bounding.coords}
-  
-  bb0<-bounds
+  if (class(bounding.coords) != "list") bounding.coords <- list(bounding.coords)
+  boundsmat <- lapply(1:length(bounding.coords), function(x){
+    matrix(bounding.coords[[x]], ncol = 2, byrow = T)
+  })
+  bb0 <- boundsmat
   bb1 <- lapply(bb0, bboxx)
   bb1[[1]] 
   bb2 <- lapply(bb1, function(x) rbind(x, x[1,]))
   bb2[[1]]
-  
   if(!is.null(names)){
-  rn <- names
+    rn <- names
+  }else if(is.null(names(bounding.coords))){
+    rn <- as.character(paste("background_", 1:length(bounding.coords), sep = ""))
   }else{
-    rn <- names(bounds)
+    rn <- names(bounding.coords)
   }
-
   bb3 <- vector(mode="list", length=length(bb2))
-
-    for (i in seq(along=bb3)) bb3[[i]] <- Polygons(list(Polygon(bb2[[i]])),
-                                                 ID=rn[i])
+  for (i in seq(along=bb3)){
+    bb3[[i]] <- Polygons(list(Polygon(bb2[[i]])), ID=rn[i])
+  } 
   bb3[[1]]
   bbs <- SpatialPolygons(bb3, proj4string=CRS(projection(grid)))
   bbs.grid<-list()
@@ -96,9 +100,10 @@ delimit<-function(bounding.coords, grid, names = NULL){
       bbs.grid[[i]]<-oo
     }
   
-  if (length(bbs.grid) == 1){bbs.grid<-bbs.grid[[1]]
-  }else{names(bbs.grid)<-rn} 
-  
+  if (length(bbs.grid) == 1){bbs.grid <- bbs.grid[[1]]
+  }else{
+    names(bbs.grid) <- rn
+  } 
   return(list("bbs"=bbs, "bbs.grid"=bbs.grid))
 }
 

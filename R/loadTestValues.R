@@ -2,11 +2,10 @@
 #' @title Load model validation statistics from Rdata generated with function allModelling
 #' @description Load model validation statistics from Rdata generated with function allModelling
 #' 
-#' @param data Object with the same structure as the object returned by function bindPresAbs. 
+#' @param models Object with the same structure as the object returned by function allModelling.
+#' @param sourcedir Directory of the objects generated and saved by allModelling
 #' @param test Any character of the following: "auc", "kappa", "tss".
-#' @param algorithm Any character of the following: "glm", "svm", "maxent", "mars", "randomForest", 
 #' "cart.rpart" or "cart.tree"
-#' @param sourcedir Character of the path where Rdata objects are stored
 #' 
 #'  
 #' 
@@ -16,16 +15,16 @@
 #' 
 #' 
 #' 
-#' @author M. Iturbide \email{maibide@@gmail.com}
+#' @author M. Iturbide 
 #' 
 #' @examples
 #' \dontrun{
 #' data(presaus)
-#' data(biostack)
+#' data(biostackENSEMBLES)
 #' ##modeling
-#' modirs <-allModeling(data = presaus, varstack = biostack, k = 10, "mars") 
+#' modirs <-allModeling(data = presaus, varstack = biostackENSEMBLES$baseline, k = 10, "mars") 
 #' ##loading
-#' auc_mars <-loadTestValues(data = presaus, test = "auc", algorithm = "mars")
+#' auc_mars <- loadTestValues(models = modirs, test = "auc") 
 #'  
 #' library(lattice)
 #' levelplot(auc_mars, aspect = 5, 
@@ -46,28 +45,20 @@
 
 
 
-loadTestValues <-function(models, sourcedir = getwd(), test = c("auc", "kappa", "tss")){
+loadTestValues <-function(models, test = c("auc", "kappa", "tss")){
   test <- match.arg(test, choices = c("auc", "kappa", "tss"))
-  extents <-attr(models, "extents")
+  extents <- models$extents
   extent.lengths <- lengths(extents)
-  max.extents <- extents[[which(extent.lengths == max(extent.lengths))]]
-  algorithm <- attr(models, "algorithm")  
-  species <- attr(models, "species") 
-  
-  val_mat <- matrix(NA, nrow= length(species), ncol=length(max.extents), dimnames=list(species, max.extents))
-  
+  max.extents <- extents[[which(extent.lengths == max(extent.lengths))[1]]]
+  algorithm <- models$algorithm
+  species <- models$species
+  val_mat <- matrix(NA, nrow= length(species), ncol = length(max.extents), dimnames=list(species, max.extents))
   for (i in 1:length(species)){
-    g <- species[i]
-    r <- extents[[i]]
-    print(paste("loading values for species", g))
-    for (k in 1:length(r)){
-      if (length(species) < 2){
-        load(paste(sourcedir,"/", algorithm, "_bg", r[k],".rda",sep=""))
-      }else {
-        load(paste(sourcedir,"/", algorithm, "_bg", r[k],"_hg",g,".rda",sep=""))
-      }
+    message(paste("loading values for species", species[i]))
+    for (k in 1:length(extents[[i]])){
+      mod <- get(load(models$dirs[[i]][k]))
       if (test == "auc"){
-        val_mat[i,k]<-mod$auc
+        val_mat[i,k] <- mod$auc
       }else if (test == "kappa"){
         val_mat[i,k]<-mod$kappa
       }else if (test == "tss"){
@@ -75,9 +66,10 @@ loadTestValues <-function(models, sourcedir = getwd(), test = c("auc", "kappa", 
       }
     } 
   }
+  message("Done.")
+  attr(val_mat, "dirs") <- models$dirs
   attr(val_mat, "algorithm") <- algorithm
   attr(val_mat, "species") <- species
   attr(val_mat, "extents") <- extents
-  attr(val_mat, "source directory") <- sourcedir
   return (val_mat)
 }

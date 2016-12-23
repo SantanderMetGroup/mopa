@@ -36,22 +36,26 @@ suitable for the species.
 }
 \examples{
 \dontrun{
-##delimit study area
 data(Oak_phylo2)
-data(sp_grid)
-oak.extension<-boundingCoords(Oak_phylo2)
-box.grid<-delimit(oak.extension, sp_grid, names(Oak_phylo2))
+data(biostackENSEMBLES)
+presences <- Oak_phylo2
+
+##creation of point grid from raster object
+sp_grid <- background(biostackENSEMBLES$baseline$bio2)
+
+##delimit study area to the whole study domain for both species
+bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
+del <- delimit(bounding.coords = bc, grid = sp_grid, names = names(presences))
 ## environmental profiling
-data(biostack)
-unsuitable.bg <-OCSVMprofiling(xy = Oak_phylo2, varstack = biostack,
-bbs.grid = box.grid$bbs.grid)
+unsuitable.bg <- OCSVMprofiling(xy = presences, varstack = biostackENSEMBLES$baseline,
+bbs.grid = del$bbs.grid)
 ##plot
 plot(unsuitable.bg$absence$H11, pch="*")
 points(unsuitable.bg$presence$H11, pch="*", col= "pink4")
 }
 }
 \author{
-M. Iturbide \email{maibide@gmail.com}
+M. Iturbide
 }
 \references{
 Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015.

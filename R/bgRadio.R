@@ -1,14 +1,11 @@
-
 #' @title Background extent restriction for a sequence of distances 
 #' @description Creation of point-grid backgrounds through the establishment of extent 
 #' limitations for a sequence of distances, with the length of the half diagonal of the 
 #' bounding box around xy records as the maximum distance
 #' 
 #' @param xy Data frame or list of data frames with coordinates (each row is a point)
-#' @param bounding.coords Object returned by function \code{\link[mopa]{boundingCoords}}.
-#' Matrix or list of matrixes of bounding coordinates indicating the maximum and minimum 
-#' values in columns and xy coordinates in rows
-#' @param bg.absence Object derived from function \code{\link[mopa]{OCSVMprofiling}} ($absence). 
+#' @param background Matrix or list of matrixes of background coordinates.
+#' Object derived from function \code{\link[mopa]{OCSVMprofiling}} ($absence). 
 #' Alternatively, object derived from function \code{\link[mopa]{delimit}} ($bbs.grid) 
 #' if the environmental profiling step is going to be avoided in the pseudo-absence 
 #' generation proccess). 
@@ -31,23 +28,31 @@
 #' 
 #' 
 #' 
-#' @author M. Iturbide \email{maibide@@gmail.com}
+#' @author M. Iturbide 
 #' 
 #' @examples
 #' \dontrun{
-#' ##delimit study area
 #' data(Oak_phylo2)
-#' data(sp_grid)
-#' oak.extension<-boundingCoords(Oak_phylo2)
-#' box.grid<-delimit(oak.extension, sp_grid, names(Oak_phylo2))
+#' data(biostackENSEMBLES)
+#' presences <- Oak_phylo2
+#' 
+#' ##creation of point grid from raster object
+#' sp_grid <- background(biostackENSEMBLES$baseline$bio2)
+#' 
+#' ##delimit study area to the whole study domain for both species
+#' bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
+#' del <- delimit(bounding.coords = bc, grid = sp_grid, names = names(presences))
 #' ## environmental profiling
-#' data(biostack)
-#' unsuitable.bg <-OCSVMprofiling(xy = Oak_phylo2, varstack = biostack, 
-#' bbs.grid = box.grid$bbs.grid)
+#' unsuitable.bg <- OCSVMprofiling(xy = presences, varstack = biostackENSEMBLES$baseline, 
+#' bbs.grid = del$bbs.grid)
 #' ## sequence of 10 km between distances, from 20 km to the length of the 
 #' ##half diagonal of the bounding box.
-#' ext <- bgRadio(xy = Oak_phylo2, bounding.coords = oak.extension, 
-#' bg.absence = unsuitable.bg$absence, start = 0.166, 
+#' ext <- bgRadio(xy = presences,
+#' background = unsuitable.bg$absence, start = 0.166, 
+#' by = 0.083, unit = "decimal degrees")
+#' 
+#' ext <- bgRadio(xy = presences,
+#' background = del$bbs.grid, start = 0.166, 
 #' by = 0.083, unit = "decimal degrees")
 #' 
 #' # Plot presences for group H11 and background extents of 20, 120 and 520 km
@@ -68,52 +73,47 @@
 
 
 
-bgRadio<-function(xy, bounding.coords, bg.absence, start= 0.166, by= 0.083, 
-                  unit= "decimal degrees"){
-  
-  bg1a<-list()
+bgRadio <- function(xy, background, start= 0.166, by= 0.083, 
+                    unit = c("decimal degrees", "utm")){
+  unit <- match.arg(unit, choices = c("decimal degrees", "utm"))
   if(class(xy) == "matrix") xy <- as.data.frame(xy)
-  if (class(xy) == "data.frame"){
-    pres<- list(xy)
-  }else{
-    pres<-xy
+  if(class(xy) == "data.frame") xy <- list(xy)
+  if(class(background) != "list") background <- rep(list(background),length(xy))
+  bounding.coords <- boundingCoords(background)
+  bg.rad <- function(xy, background, r){
+    background[unique(nearest.dist(x = xy, 
+                                   y = background, 
+                                   method = "maximum", 
+                                   delta = r)@colindices),]
   }
-  
-  if (class(bounding.coords) != "list"){
-    l.box<-rep(list(bounding.coords),length(xy))
-  }else{l.box<-bounding.coords}
-  
-  if (class(bg.absence) != "list"){
-    bg.absence<-list(bg.absence)
-  }else{bg.absence<-bg.absence}
-  
-  bg.rad<-function(pres, bg.absence, r){
-    bg.absence[unique(nearest.dist(x=pres, y=bg.absence, 
-                                   method="maximum", delta=r)@colindices),]
-  }
-  
-    for (i in 1:length(pres)){
-      print(paste("creating background point-grids for species", i, "out of", length(pres)))
-      box<-l.box[[i]]
-      pr<-pres[[i]]
-      gbox<-bg.absence[[i]]
+  bg1a <- list()
+  for (i in 1:length(xy)){
+    print(paste("creating background point-grids for species", i, "out of", length(xy)))
+    box <- matrix(bounding.coords[[i]], ncol = 2)
+    pr <- xy[[i]]
+    gbox <- background[[i]]
     
-      a<-(max(l.box[[i]][1,])-min(l.box[[i]][1,]))/2
-      b<-(max(l.box[[i]][2,])-min(l.box[[i]][2,]))/2
-      c<-sqrt(a*a+b*b)
-      radios<-seq(start, c, by)
-      r<-radios
-      bg1a[[i]]<-sapply(r, FUN=bg.rad, pres=pr, bg.absence=gbox)
-      
-      if (unit=="decimal degrees"){
-        names(bg1a[[i]])<-paste("km", as.character(r/0.0083), sep="")
-      } else if (unit=="utm"){
-        names(bg1a[[i]])<-paste("km", as.character(r/1000), sep="")
-      } else {names(bg1a[[i]])<-NULL}
+    a <- (max(box[1,])-min(box[1,]))/2
+    b <- (max(box[2,])-min(box[2,]))/2
+    c <- sqrt(a*a+b*b)
+    radios <- seq(start, c, by)
+    r <- radios
+    bg1a[[i]] <- sapply(r, FUN=bg.rad, xy = pr, background = gbox)
+    
+    if(unit == "decimal degrees"){
+      names(bg1a[[i]]) <- paste("km", as.character(r/0.0083), sep="")
+    } else if (unit == "utm"){
+      names(bg1a[[i]]) <- paste("km", as.character(r/1000), sep="")
+    } else {
+      names(bg1a[[i]]) <- NULL
     }
-  
-  if (length(bg1a) == 1){bg1a <- bg1a[[1]]
-  }else{names(bg1a)<-names(pres)}
-  
-  return("bg"=bg1a)
+  }
+  if (length(bg1a) == 1){
+    bg1a <- bg1a[[1]]
+  }else{
+    names(bg1a) <- names(xy)
+  }
+  return("bg"= bg1a)
 }
+
+#end

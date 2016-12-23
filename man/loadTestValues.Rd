@@ -4,19 +4,15 @@
 \alias{loadTestValues}
 \title{Load model validation statistics from Rdata generated with function allModelling}
 \usage{
-loadTestValues(data, test = c("auc", "kappa", "tss"), algorithm = c("glm",
-  "svm", "maxent", "mars", "randomForest", "cart.rpart", "cart.tree"),
-  sourcedir = getwd())
+loadTestValues(models, test = c("auc", "kappa", "tss"))
 }
 \arguments{
-\item{data}{Object with the same structure as the object returned by function bindPresAbs.}
+\item{models}{Object with the same structure as the object returned by function allModelling.}
 
-\item{test}{Any character of the following: "auc", "kappa", "tss".}
-
-\item{algorithm}{Any character of the following: "glm", "svm", "maxent", "mars", "randomForest",
+\item{test}{Any character of the following: "auc", "kappa", "tss".
 "cart.rpart" or "cart.tree"}
 
-\item{sourcedir}{Character of the path where Rdata objects are stored}
+\item{sourcedir}{Directory of the objects generated and saved by allModelling}
 }
 \value{
 Matrix with values for each species and background extents.
@@ -32,11 +28,11 @@ detail.
 \examples{
 \dontrun{
 data(presaus)
-data(biostack)
+data(biostackENSEMBLES)
 ##modeling
-modirs <-allModeling(data = presaus, varstack = biostack, k = 10, "mars")
+modirs <-allModeling(data = presaus, varstack = biostackENSEMBLES$baseline, k = 10, "mars")
 ##loading
-auc_mars <-loadTestValues(data = presaus, test = "auc", algorithm = "mars")
+auc_mars <- loadTestValues(models = modirs, test = "auc")
 
 library(lattice)
 levelplot(auc_mars, aspect = 5,
@@ -50,7 +46,7 @@ levelplot(auc_mars, aspect = 5,
 }
 }
 \author{
-M. Iturbide \email{maibide@gmail.com}
+M. Iturbide
 }
 \references{
 Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015.

@@ -4,17 +4,14 @@
 \alias{bgRadio}
 \title{Background extent restriction for a sequence of distances}
 \usage{
-bgRadio(xy, bounding.coords, bg.absence, start = 0.166, by = 0.083,
-  unit = "decimal degrees")
+bgRadio(xy, background, start = 0.166, by = 0.083,
+  unit = c("decimal degrees", "utm"))
 }
 \arguments{
 \item{xy}{Data frame or list of data frames with coordinates (each row is a point)}
 
-\item{bounding.coords}{Object returned by function \code{\link[mopa]{boundingCoords}}.
-Matrix or list of matrixes of bounding coordinates indicating the maximum and minimum
-values in columns and xy coordinates in rows}
-
-\item{bg.absence}{Object derived from function \code{\link[mopa]{OCSVMprofiling}} ($absence).
+\item{background}{Matrix or list of matrixes of background coordinates.
+Object derived from function \code{\link[mopa]{OCSVMprofiling}} ($absence).
 Alternatively, object derived from function \code{\link[mopa]{delimit}} ($bbs.grid)
 if the environmental profiling step is going to be avoided in the pseudo-absence
 generation proccess).}
@@ -46,19 +43,27 @@ point grid (derived from function \code{\link[mopa]{OCSVMprofiling}} or function
 }
 \examples{
 \dontrun{
-##delimit study area
 data(Oak_phylo2)
-data(sp_grid)
-oak.extension<-boundingCoords(Oak_phylo2)
-box.grid<-delimit(oak.extension, sp_grid, names(Oak_phylo2))
+data(biostackENSEMBLES)
+presences <- Oak_phylo2
+
+##creation of point grid from raster object
+sp_grid <- background(biostackENSEMBLES$baseline$bio2)
+
+##delimit study area to the whole study domain for both species
+bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
+del <- delimit(bounding.coords = bc, grid = sp_grid, names = names(presences))
 ## environmental profiling
-data(biostack)
-unsuitable.bg <-OCSVMprofiling(xy = Oak_phylo2, varstack = biostack,
-bbs.grid = box.grid$bbs.grid)
+unsuitable.bg <- OCSVMprofiling(xy = presences, varstack = biostackENSEMBLES$baseline,
+bbs.grid = del$bbs.grid)
 ## sequence of 10 km between distances, from 20 km to the length of the
 ##half diagonal of the bounding box.
-ext <- bgRadio(xy = Oak_phylo2, bounding.coords = oak.extension,
-bg.absence = unsuitable.bg$absence, start = 0.166,
+ext <- bgRadio(xy = presences,
+background = unsuitable.bg$absence, start = 0.166,
+by = 0.083, unit = "decimal degrees")
+
+ext <- bgRadio(xy = presences,
+background = del$bbs.grid, start = 0.166,
 by = 0.083, unit = "decimal degrees")
 
 # Plot presences for group H11 and background extents of 20, 120 and 520 km
@@ -69,7 +74,7 @@ points(Oak_phylo2$H11, col = "red", pch = ".", cex = 1.5)
 }
 }
 \author{
-M. Iturbide \email{maibide@gmail.com}
+M. Iturbide
 }
 \references{
 Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015.

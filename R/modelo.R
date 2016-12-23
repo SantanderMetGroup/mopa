@@ -9,6 +9,7 @@
 #' (extracted from varstack) 
 #' @param algorithm Any character of the following: \code{"glm"}, "svm", "maxent", "mars", "randomForest", "cart.rpart" 
 #' or "cart.tree"
+#' @param threshold Cut value between 0 and 1 to calculate the confusion matrix. Default is 0.5.
 #'
 #'  
 #' 
@@ -25,7 +26,7 @@
 #' 
 #' 
 #' 
-#' @author M. Iturbide \email{maibide@@gmail.com}
+#' @author M. Iturbide 
 #' 
 #'
 #' @export
@@ -42,7 +43,7 @@
 
 
 
-modelo<-function(kdata, data, algorithm = c("glm","svm","maxent","mars","randomForest","cart.rpart","cart.tree")){
+modelo<-function(kdata, data, algorithm = c("glm","svm","maxent","mars","randomForest","cart.rpart","cart.tree"), threshold = 0.5){
   mod <- list()
   pmod <- list()
   algorithm <- as.character(algorithm)
@@ -107,11 +108,15 @@ modelo<-function(kdata, data, algorithm = c("glm","svm","maxent","mars","randomF
   
   ori<-unlist(orig)
   p<-unlist(pmod)
+  p.auc <- p
+  p.auc[which(p>=threshold)] <- 1
+  p.auc[which(p.auc!=1)] <- 0
   dat<-as.data.frame(cbind(as.integer(c(1:length(ori))), ori, p))
-  mod.auc <- auc(dat, st.dev = FALSE)
-  mod.kappa <-Kappa(cmx(dat), st.dev = FALSE)
-  mod.tss <- sensitivity(cmx(dat),st.dev = FALSE) + 
-    specificity (cmx(dat),st.dev = FALSE) - 1
+  dat.auc <- as.data.frame(cbind(as.integer(c(1:length(ori))), ori, p.auc))
+  mod.auc <- auc(dat.auc, st.dev = FALSE)
+  mod.kappa <- Kappa(cmx(dat, threshold = threshold), st.dev = FALSE)
+  mod.tss <- sensitivity(cmx(dat, threshold = threshold),st.dev = FALSE) + 
+    specificity (cmx(dat, threshold = threshold),st.dev = FALSE) - 1
   rm(ori, p)
   return(list("allmod"=allmod, "auc" = mod.auc, "kappa"=mod.kappa, "tss"= mod.tss ,"mod" = mod,"p" = dat)) # behar dira ere modeloak
 }

@@ -4,8 +4,8 @@
 #' different extent
 #' 
 #' @param xy Data frame or list of data frames with coordinates (each row is a point)
-#' @param bg.grids Object derived from function OCSVMprofiling or bgRadio. (List/s of matrixes 
-#' with background xy coordinates)
+#' @param background Matrix or list/s of matrixes with background coordinates in columns.
+#' Object derived from function delimit, OCSVMprofiling or bgRadio. 
 #' @param exclusion.buffer value of the minimum distance to be kept between presence data and 
 #' pseudo-absence data. Default is 0.0166
 #' @param prevalence Proportion of presences against absences. Default is 0.5 (equal number of 
@@ -25,7 +25,7 @@
 #' 
 #' 
 #' 
-#' @author M. Iturbide \email{maibide@@gmail.com}
+#' @author M. Iturbide 
 #' 
 #' @examples
 #' \dontrun{
@@ -43,7 +43,7 @@
 #' ext <-bgRadio(xy = Oak_phylo2, bounding.coords = oak.extension, 
 #' bg.absence = unsuitable.bg$absence, start = 0.166, by = 0.083, unit = "decimal degrees")
 #' ## pseudo-absence generation at random
-#' pa_random <-PseudoAbsences(xy = Oak_phylo2, bg.grids = ext, 
+#' pa_random <-PseudoAbsences(xy = Oak_phylo2, background = ext, 
 #' exclusion.buffer = 0.083, prevalence = 0.5, kmeans = FALSE)
 #' ##plot
 #' plot(ext$H11[[5]], pch="*", col= "grey", cex=.5)
@@ -65,26 +65,22 @@
 
 
 
-PseudoAbsences<-function (xy, bg.grids, exclusion.buffer = 0.0166, prevalence = 0.5, 
-                          kmeans = FALSE, varstack = NULL, projection = CRS("+proj=longlat +init=epsg:4326")) 
-{
+pseudoAbsences <- function (xy, background, exclusion.buffer = 0.0166, prevalence = 0.5, 
+                          kmeans = FALSE, varstack = NULL, projection = CRS("+proj=longlat +init=epsg:4326")){
   polybuffs <- list()
   r <- exclusion.buffer
   prev <- (1 - prevalence) * 2
-  
-  if (class(bg.grids[[1]]) == "matrix") {
-    bg2 <- list(bg.grids)
-  } else {
-    bg2 <- bg.grids
-  }
-  
-  if (class(xy) == "data.frame") {
-    pres.list <- list(xy)
-  }  else {
-    pres.list <- xy
-  }
-  for (j in 1:length(pres.list)) {
-    pres.1km <- pres.list[[j]]
+  if (any(c("data.frame", "matrix") == class(xy))) xy <- list(xy)
+  if (any(c("data.frame", "matrix") == class(background))){
+    background <- rep(list(background), length(xy))
+    if(length(xy) > 1) message("The same background will be used for all presence datasets in xy")
+  } 
+  if(length(xy) != length(background)) stop("xy and background do not have the same length")
+  if(any(c("matrix", "data.frame") == class(background[[1]]))){
+    background <- lapply(seq(length(background)), function(x){list(background[[x]])})
+  } 
+  for (j in 1:length(xy)) {
+    pres.1km <- xy[[j]]
     polys <- list()
     for (i in 1:nrow(pres.1km)) {
       discbuff <- disc(radius = r, centre = c(pres.1km[i, 
@@ -104,13 +100,13 @@ PseudoAbsences<-function (xy, bg.grids, exclusion.buffer = 0.0166, prevalence = 
     polybuffs[[j]] <- spol
   }
   aa <- list()
-  for (j in 1:length(bg2)) {
+  for (j in 1:length(background)) {
     message("generating pseudo-absences for species ", 
-                j, " out of ", length(bg2))
+                j, " out of ", length(background))
     aus <- list()
-    coords.l <- bg2[[j]]
+    coords.l <- background[[j]]
     polpol <- polybuffs[[j]]
-    pr <- pres.list[[j]]
+    pr <- xy[[j]]
     for (i in 1:length(coords.l)) {
 #       print(paste("b =", i, "out of", as.character(length(coords.l))))
       coords <- coords.l[[i]]
@@ -152,7 +148,7 @@ PseudoAbsences<-function (xy, bg.grids, exclusion.buffer = 0.0166, prevalence = 
   if (length(aa) == 1) {
     aa <- aa[[1]]
   } else {
-    names(aa) <- names(pres.list)
+    names(aa) <- names(xy)
   }
   return(aa)
 }

@@ -2,18 +2,18 @@
 % Please edit documentation in R/delimit.R
 \name{delimit}
 \alias{delimit}
-\title{Delimit study area and background}
+\title{Delimit study area and background coordinates}
 \usage{
-delimit(bounding.coords, grid, names)
+delimit(bounding.coords, grid, names = NULL)
 }
 \arguments{
-\item{bounding.coords}{Object returned by function \code{\link{boundingCoords}}.
-Matrix or list of matrixes of bounding coordinates indicating the maximum and minimum
-values in columns and xy coordinates in rows}
+\item{bounding.coords}{A vector or a list of vectors with bounding coordinates in the following form: c(x1, x2, y1, y2).
+Also object returned by function \code{\link{boundingCoords}}.}
 
 \item{grid}{Projected SpatialPoints object}
 
-\item{names}{Names or IDs to be given to each shape}
+\item{names}{Character. Names or IDs to be given to each shape. If not specified names of the object passed to
+bounding.coords will be given. In case this object has no names the background numbers will be used as names.}
 }
 \value{
 A list with two components:
@@ -39,28 +39,34 @@ bbs shapes.
 \examples{
 \dontrun{
 data(Oak_phylo2)
-data(biostack)
+data(biostackENSEMBLES)
+presences <- Oak_phylo2
+
 ##creation of point grid from raster object
-library(raster)
-ac<-xyFromCell(biostack[[1]],  1:ncell(biostack[[1]]))
-ex<-extract(biostack[[1]], ac)
-##exclude sea and project
-sp_grid<-SpatialPoints(ac[-which(is.na(ex)),])
-projection(sp_grid)<-CRS("+proj=longlat +init=epsg:4326")
-plot(sp_grid)
-##delimit study area
-oak.extension<-boundingCoords(Oak_phylo2)
-box.grid <- delimit(bounding.coords = oak.extension, grid = sp_grid, names = names(Oak_phylo2))
+sp_grid <- background(biostackENSEMBLES$baseline$bio2)
+
+##delimit study area to the whole study domain for both species
+bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
+del <- delimit(bounding.coords = bc, grid = sp_grid)
+## Plot presences and bounding boxes
+plot(del$bbs, asp = 1)
+for (i in 1:length(presences)){
+  points(presences[[i]], col = colors()[i*50])
+}
+
+##delimit study area to the bounding coordinates of each species
+bc <- boundingCoords(presences)
+del <- delimit(bounding.coords = bc, grid = sp_grid)
 
 ## Plot presences and bounding boxes
-plot(box.grid$bbs, asp = 1)
-for (i in 1:length(Oak_phylo2)){
- points(Oak_phylo2[[i]], col = colors()[i*50])
- }
+plot(del$bbs, asp = 1)
+for (i in 1:length(presences)){
+  points(presences[[i]], col = colors()[i*50])
+  }
 }
 }
 \author{
-M. Iturbide \email{maibide@gmail.com}
+M. Iturbide
 }
 \references{
 Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015.

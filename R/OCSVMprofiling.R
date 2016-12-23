@@ -25,19 +25,23 @@
 #' 
 #' 
 #' 
-#' @author M. Iturbide \email{maibide@@gmail.com}
+#' @author M. Iturbide 
 #' 
 #' @examples
 #' \dontrun{
-#' ##delimit study area
 #' data(Oak_phylo2)
-#' data(sp_grid)
-#' oak.extension<-boundingCoords(Oak_phylo2)
-#' box.grid<-delimit(oak.extension, sp_grid, names(Oak_phylo2))
+#' data(biostackENSEMBLES)
+#' presences <- Oak_phylo2
+#' 
+#' ##creation of point grid from raster object
+#' sp_grid <- background(biostackENSEMBLES$baseline$bio2)
+#' 
+#' ##delimit study area to the whole study domain for both species
+#' bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
+#' del <- delimit(bounding.coords = bc, grid = sp_grid, names = names(presences))
 #' ## environmental profiling
-#' data(biostack)
-#' unsuitable.bg <-OCSVMprofiling(xy = Oak_phylo2, varstack = biostack, 
-#' bbs.grid = box.grid$bbs.grid)
+#' unsuitable.bg <- OCSVMprofiling(xy = presences, varstack = biostackENSEMBLES$baseline, 
+#' bbs.grid = del$bbs.grid)
 #' ##plot
 #' plot(unsuitable.bg$absence$H11, pch="*")
 #' points(unsuitable.bg$presence$H11, pch="*", col= "pink4")
@@ -49,52 +53,32 @@
 #' 
 #' @export
 #' 
-#' @import raster
-#' @import sp
 #' @importFrom e1071 svm
-#'  
-#' 
-#' 
+ 
 
 OCSVMprofiling<-function(xy, varstack, bbs.grid, nu=.5){
-  
-  if (class(xy) != "list"){
-    pres<- list(xy)
-  } else {
-    pres <- xy
-  }
-  
-  if (class(bbs.grid) != "list"){
-    coords<-rep(list(bbs.grid), length(xy))
-  }else{
-    coords <-bbs.grid
-  }
-  
- 
+  if (class(xy) != "list")  xy <- list(xy)
+  if (class(bbs.grid) != "list")  bbs.grid <- rep(list(bbs.grid), length(xy))
   bioclim <-varstack
-  absence<-list()    
-  presence<-list()
-  
-    for(i in 1:length(pres)){
-      length(absence)<-i
-      coo<-coords[[i]]
-      mat<- cbind(pres[[i]], rep(1, nrow(pres[[i]])))
-      mat<-biomat(mat, bioclim)
-      mod<-svm(mat[,-1], y=NULL, type='one-classification', nu=nu)
-                  
-          proj<-biomat(cbind(coo,rep(1,nrow(coo))), bioclim)
-          pre<-predict(mod, proj[,-1])
-          absence[[i]]<-coo[(which(pre==0)),]
-          presence[[i]]<-coo[(which(pre!=0)),]
-
-    }
-   
-  if (length(absence) == 1){
-     absence <-absence[[1]]
-     presence <-presence[[1]]
-   }else{
-     names(absence)<-names(pres)
-     names(presence)<-names(pres)
-   }
+  absence <- list()    
+  presence <- list()
+  for(i in 1:length(xy)){
+    length(absence) <- i
+    coo <- bbs.grid[[i]]
+    mat <- cbind(xy[[i]], rep(1, nrow(xy[[i]])))
+    mat <- biomat(mat, bioclim)
+    mod <- svm(mat[,-1], y=NULL, type='one-classification', nu=nu)
+    proj <- biomat(cbind(coo,rep(1,nrow(coo))), bioclim)
+    pre <- predict(mod, proj[,-1])
+    absence[[i]] <- coo[(which(pre==0)),]
+    presence[[i]] <- coo[(which(pre!=0)),]
+  }
+  if(length(absence) == 1){
+    absence <- absence[[1]]
+    presence <- presence[[1]]
+  }else{
+    names(absence) <- names(xy)
+    names(presence) <- names(xy)
+  }
   return(list("absence"=absence, "presence"=presence))
 }
