@@ -1,11 +1,6 @@
 Package: mopa
-Type: Package
-Title: Species distribution modelling with the three-step method for
-    pseudo-absence data generation
-Version: 0.2.0
-Date: 03-Jun-2015
 Depends:
-    R (>= 3.0.0),
+    R (>= 3.4.0),
     raster,
     sp
 Imports:
@@ -21,15 +16,27 @@ Imports:
     randomForest,
     PresenceAbsence,
     lattice,
-    gtools
+    gtools,
+    ranger,
+    abind,
 Suggests:
-    rJava (>= 0.5-0)
-Author: Maialen Iturbide [aut, cre], Joaquin Bedia [ctb]
-Maintainer: Maialen Iturbide <maibide@gmail.com>
-Description: Species distribution modelling using two implementations of the 
-    three-step method for pseudo-absence data generation
+    rJava (>= 0.5-0),
+    caret (>= 6.0-76),
+    loadeR (>= 1.0.9),
+    downscaleR (>= 2.0-0),
+    transformeR (>= 0.0.8)
+Type: Package
+Title: Species Distribution MOdeling with Pseudo-Absences
+Version: 1.0.0
+Date: 2017-05-02
+Authors@R: as.person(c(
+    "Joaquin Bedia <bediaj@unican.es> [ctb]",
+    "Maialen Iturbide <miturbide@ifca.unican.es> [aut, cre]",
+    "Santander Meteorology Group <http://meteo.unican.es> [ctb]"))
+Description: Transferable Species Distribution Modeling and Pseudo-absence data generation.
 BugReports: https://github.com/SantanderMetGroup/mopa/issues
+URL: https://github.com/SantanderMetGroup/mopa/wiki
 License: file LICENSE
-LazyLoad: yes
-Packaged: 2014-09-10 05:53:24 UTC; miturbide
-NeedsCompilation: yes
+LazyLoad: true
+RoxygenNote: 6.0.1
+Maintainer: Maialen Iturbide <miturbide@ifca.unican.es> 

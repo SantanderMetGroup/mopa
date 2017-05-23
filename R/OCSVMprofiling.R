@@ -1,51 +1,45 @@
 
-#' @title Environmental profiling with one-classification support vector machine
-#' @description Presence-only modelling and classification of coordinates predicted as 
+#' @title Environmental profiling with One-Classification Support Vector Machine
+#' @description Presence-only modeling and classification of coordinates predicted as 
 #' presence and absence
 #' 
 #' @param xy Data frame or list of data frames with coordinates (each row is a point)
-#' @param varstack RasterStack of variables for modelling
-#' @param bbs.grid Object derived from function \code{\link[mopa]{delimit}}. 
+#' @param varstack RasterStack of variables for modeling
+#' @param background Object derived from function \code{\link[mopa]{backgroundGrid}}. If NULL (default),
+#' the background is extracted from varstack.
 #' Matrix or list of matrixes of the background xy coordinates in columns. 
-#' @param nu parameter needed for one-classification \code{\link[e1071]{svm}}. 
+#' @param nu Parameter needed for one-classification \code{\link[e1071]{svm}}. 
 #' Default is 0.5
 #'
-#' @seealso \code{\link[e1071]{svm}} 
+#' @seealso \code{\link[e1071]{svm}}, \code{\link[mopa]{backgroundGrid}}
 #' 
 #' @return  A list with two components:
 #'   \item{absence }{Matrix or list of matrixes with xy coordinates predicted 
-#' as absence, each matrix correspond to a different background extent}
-#' \item{presence }{Matrix or list of matrixes with xy coordinates predicted as presence, 
-#' each matrix correspond to a different background extent}
+#' as absence}
+#' \item{presence }{Matrix or list of matrixes with xy coordinates predicted as presence}
 #' 
 #' @details This function constitutes the 
 #' first step from a three-step proccess to generate pseudo-absences, and is aimed at 
-#' separating from background (see \code{\link[mopa]{delimit}}) those areas (xy records) 
-#' suitable for the species. 
+#' excluding the suitable areas for the species (xy records) from the background 
+#' from which pseudo-absences are sampled. 
 #' 
 #' 
 #' 
 #' @author M. Iturbide 
 #' 
 #' @examples
-#' \dontrun{
 #' data(Oak_phylo2)
-#' data(biostackENSEMBLES)
-#' presences <- Oak_phylo2
-#' 
-#' ##creation of point grid from raster object
-#' sp_grid <- background(biostackENSEMBLES$baseline$bio2)
-#' 
-#' ##delimit study area to the whole study domain for both species
-#' bc <- rep(list(boundingCoords(coordinates(sp_grid))), length(presences))
-#' del <- delimit(bounding.coords = bc, grid = sp_grid, names = names(presences))
-#' ## environmental profiling
-#' unsuitable.bg <- OCSVMprofiling(xy = presences, varstack = biostackENSEMBLES$baseline, 
-#' bbs.grid = del$bbs.grid)
+#' data(biostack)
+#' projection(biostack$baseline) <- CRS("+proj=longlat +init=epsg:4326")
+#' r <- biostack$baseline[[1]]
+# Background of the whole study area
+#' bg <- backgroundGrid(r)
+## environmental profiling
+#' bg.profiled <- OCSVMprofiling(xy = Oak_phylo2, varstack = biostack$baseline, 
+#'                               background = bg$xy)
 #' ##plot
-#' plot(unsuitable.bg$absence$H11, pch="*")
-#' points(unsuitable.bg$presence$H11, pch="*", col= "pink4")
-#' }
+#' plot(bg.profiled$absence$H11, pch="*")
+#' points(bg.profiled$presence$H11, pch="*", col= "pink")
 #' 
 #' @references Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015. 
 #' A framework for species distribution modelling with improved pseudo-absence generation. Ecological 
@@ -56,15 +50,17 @@
 #' @importFrom e1071 svm
  
 
-OCSVMprofiling<-function(xy, varstack, bbs.grid, nu=.5){
+OCSVMprofiling<-function(xy, varstack, background = NULL, nu=.5){
   if (class(xy) != "list")  xy <- list(xy)
-  if (class(bbs.grid) != "list")  bbs.grid <- rep(list(bbs.grid), length(xy))
+  if(is.null(background)) background <- backgroundGrid(varstack[[1]])$xy
+  if (class(background) != "list")  background <- rep(list(background), length(xy))
+  
   bioclim <-varstack
   absence <- list()    
   presence <- list()
   for(i in 1:length(xy)){
     length(absence) <- i
-    coo <- bbs.grid[[i]]
+    coo <- background[[i]]
     mat <- cbind(xy[[i]], rep(1, nrow(xy[[i]])))
     mat <- biomat(mat, bioclim)
     mod <- svm(mat[,-1], y=NULL, type='one-classification', nu=nu)

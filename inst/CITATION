@@ -1,8 +1,9 @@
-citHeader("To cite package mopa in publications use:")
+citHeader("To cite package mopa in publications please use:")
 
 citEntry(entry="Article",
 	title = "A framework for species distribution modelling with improved pseudo-absence generation",
-	author = personList(as.person("Maialen Iturbide"),as.person("Joaquin Bedia"),
+	author = personList(as.person("Maialen Iturbide"),
+	          as.person("Joaquin Bedia"),
 						as.person("Sixto Herrera"),
 						as.person("Oscar del Hierro"),
 						as.person("Miriam Pinto"),
@@ -10,9 +11,12 @@ citEntry(entry="Article",
 	
 	journal = "Ecological Modelling",
 	year	 = 2015,
+	volume = 312,
+  pages = "166-174",
 	doi = "10.1016/j.ecolmodel.2015.05.018",
 	
 	textVersion = 
 	paste("Iturbide, M., Bedia, J., Herrera, S., del Hierro, O., Pinto, M., Gutierrez, J.M., 2015. A framework
 	for species distribution modelling with improved pseudo-absence generation. Ecological Modelling DOI: 10.1016/j.ecolmodel.2015.05.018.")
 )
+

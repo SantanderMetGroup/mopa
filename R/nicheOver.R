@@ -2,27 +2,50 @@
 #' @description Compute niche overlap among rasters in a RasterStack
 #' 
 #' @param stack RasterStack   
-#' @param metric Metric for niche overlap. Options are "D" and "O" (see details).
+#' @param metric Metric for niche overlap. Options are \code{D} and \code{O} (see details).
 #' 
 #' @return Matrix of overlap values for metric D or O.
 #' 
 #' 
 #' @details Niche overlap measures the similarity of the environmental ranges occupied by each constructed model
-#' via operating the difference between two vectors of probability distributions (p), where p x,i and p y,i are 
-#' the normalized suitability scores for biological entity or model X and Y in grid cell i.
+#' via operating the difference between two vectors of probability distributions.
 #' 
-#'  D: Schoener’s statistic for niche overlap (Warren et al., 2008).
+#'  D: Schoeners statistic for niche overlap (Warren et al., 2008).
 #'  O: Pianka index (Pianka, 1973).
 #' 
+#' @examples
+#' data(Oak_phylo2)
+#' data(biostack)
+#' r <- biostack$baseline[[1]]
+#' ## Create background grid
+#' bg <- backgroundGrid(r)
+#' ## Generate pseudo-absences
+#' RS_random <-pseudoAbsences(xy = Oak_phylo2, background = bg$xy, 
+#'                            exclusion.buffer = 0.083*5, prevalence = -0.5, kmeans = FALSE)
+#' ## Model training
+#' fittedRS <- mopaTrain(y = RS_random, x = biostack$baseline, 
+#'                       k = 10, algorithm = "glm", weighting = TRUE)
+#' ## Extract fitted models
+#' mods <- extractFromModel(models = fittedRS, value = "model")
+## Model prediction
+#' preds <- mopaPredict(models = mods, newClim = biostack$future)
+#' 
+#' ## Extract predictions for species phylogeny H11
+#' predsH11 <- extractFromPrediction(predictions = preds, value = "H11")
+#' 
+#' ## Compute niche overlap
+#' no <- nicheOver(predsH11, metric = "D")
+#' library(lattice)
+#' levelplot(no, col.regions = rev(terrain.colors(16)))
 #' 
 #' 
 #' @author M. Iturbide 
 #' 
 #' @references Warren DL, Glor RE, Turelli M, Funk D (2008) Environmental niche equivalency versus conservatism:
-#' Quantitative approaches to niche evolution. Evolution, 62, 2868–2883. doi:10.1111/j.1558-5646.2008. 00482.x.
+#' Quantitative approaches to niche evolution. Evolution, 62, 2868-2883. doi:10.1111/j.1558-5646.2008. 00482.x.
 #' 
 #' Pianka ER (1973) The Structure of Lizard Communities. Annual Review of Ecology and Systematics, 4, 
-#' 53–74. doi:10.1146/annurev.es.04.110173.000413.
+#' 53-74. doi:10.1146/annurev.es.04.110173.000413.
 #' 
 #' @export
 #' @importFrom gtools combinations   

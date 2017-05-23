@@ -1,7 +1,7 @@
 mopa
 ==========
 
-A R package for species distribution modelling implementing the three-step pseudo-absence generation methods.
+A R package for species distribution modelling implementing different pseudo-absence generation methods.
 See the [wiki](https://github.com/SantanderMetGroup/mopa/wiki) for worked examples.
 
 To install `mopa`:

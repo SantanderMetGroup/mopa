@@ -6,3 +6,4 @@ mopa.Rproj
 ignore
 rabs.Rproj
 vignettes/.*Rdata
+R/deprecated.R
